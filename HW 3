@@ -163,6 +163,21 @@ print(confint(bootstrap_LosLos, level = 0.95))
 ```
 The question that we are trying to answer with the model above is if there is a difference in the annoyance of the 2 shows: The Biggest Loser and The Apprentice: Los Angeles and if the difference is statistically significant. First, we filtered the data to only include the viewers that had viewed the 2 shows and calculated the means of their scores, which resulted in The Apprentice and The Biggest Loser getting scores of 2.31 and 2.04, respectively. Then using a bootstrapping method with a 95% confidence interval, we saw that the interval doesn't include 0, which suggests the fact that this difference in the means are statistically significant.
 
+*Part C*
+```{r}
+nbcDance <- nbc |>
+  filter(Show == "Dancing with the Stars")
 
+DanceConfused <- nbcDance |> 
+  mutate(Confused = as.numeric(Q2_Confusing >= 4))
+
+
+DanceConfusedProp <- mean(DanceConfused$Confused)
+print(DanceConfusedProp)
+
+bootConfused <- do(1000) * mean(~ Confused, data = resample(DanceConfused))
+print(confint(bootConfused, level = 0.95))
+```
+The question we are trying to answer witht the model above is what percentages of americans would be confused when watching Dancing with the Stars. In order to solve for this, we did the bootstrap method with a 95% confidence interval in order to see what the proportion of confused viewers would be on a larger scale. The 95% interval tells us a lower bound of 0.044 and an upper of 0.122, suggesting that only a small number of the show's viewers, roughly around 7.73% would find the show confusing.
 
 
