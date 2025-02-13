@@ -1,0 +1,164 @@
+---
+title: "SDS 315 Homework 3"
+subtitle: "Season Soti ss227985"
+output: pdf_document
+date: "2025-02-10"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, fig.align = "center")
+library(tidyverse)
+library(mosaic)
+
+gas <- read.csv("gasprices.csv")
+cars <- read.csv("sclass.csv")
+nbc <- read.csv("nbc_pilotsurvey.csv")
+ebay <- read.csv("ebay.csv")
+```
+
+***Problem 1***
+
+*A) Gas stations charge more if they lack direct competition in sight*
+
+```{r}
+ggplot(gas, aes(x = Price)) +
+  geom_histogram(binwidth = 0.05, fill = "blue") +
+  facet_wrap(~ Competitors) +
+  labs(title = "Gas Price Distribution: With vs. Without Competition",
+       x = "Gas Price",
+       y = "Count") +
+  theme_bw()
+gasmean <- mean(Price ~ Competitors, data = gas)
+bootstrap_gas <- do(10000) * mean(Price ~ Competitors, data = resample(gas))
+print(confint(bootstrap_gas, level=0.95))
+```
+
+The claim addressed by the graph above is that gas stations charge more if they lack direct competition in sight. In the visualization above, we can see that graph of gas stations that have competition is right skewed, where as the graph of gas stations without competition is much more uniform. Also, the gas stations without competition are priced between \$x 1.85 and \$1.90 with a 95% conficence interval, whereas gas stations with competition are priced between \$1.83 and \$1.87 with the same confidence interval. This supports the original claim that gas stations without competition nearby are more likely to charge a greater premium for gas.
+
+*B) The richer the area, the higher the gas prices.*
+
+```{r}
+ggplot(gas, aes(x = Income, y = Price)) +
+  geom_point() +
+  geom_smooth(method = "lm", color = "red") +
+  theme_bw()
+print(cor(gas$Income, gas$Price))
+bootstrap_gasincome <- do(10000) * cor(Price ~ Income, data = resample(gas))
+print(confint(bootstrap_gasincome, level =0.95))
+```
+
+The claim addressed by the graph above is that gas prices tend to be higher in areas where the median income is also higher. In the visualization above, we can see that the correlation line is trending upwards, suggesting that there is a positive correlation between the two variables. In the 95% confidence interval, we can say that the correlation coefficent between the income of an area and the price of gas is between 19.7% and 56.3%, with the average estimate being around 39.6%. This supports the original claim that gas stations in more wealthy areas tend to charge more per gallon of gas.
+
+*C) Gas stations at stoplights charge more.*
+
+```{r}
+ggplot(gas, aes(x = Price)) +
+  geom_histogram(binwidth = 0.05, fill = "red") +
+  facet_wrap(~ Stoplight, labeller = 
+               labeller(Stoplight = c("Y" = "Near Stoplight", "N" = "Not Near Stoplight"))) +
+  labs(title = "Gas Price Distribution: Near Stoplight or Not",
+       x = "Gas Price",
+       y = "Count") +
+  theme_bw()
+bootstoplight <- do(10000) * mean(Price ~ Stoplight, data = resample(gas))
+print(confint(bootstoplight, level=0.95))
+
+```
+
+The claim addressed by the graph above is that gas prices tend to be higher in areas where it is next to a stoplight. Looking at just the graph, it is difficult to tell whether or not the claim is true because while the mode of the gas stations near stoplights appears to greater, a majority of gas stations appear to be below the average, whereas the mode of gas stations not near stoplights appears to be lower, but the majority of gas stations are greater than the mode. However, using the technique of bootstrapping with a 95% confidence interval, we can see that the ranges of gas stations are very similar, with the average estimate being less than a penny apart. Therefore, I conclude that, on average, gas stations both near and away from stoplights will charge very similar prices.
+
+*D) Gas stations with direct highway access charge more.*
+
+```{r}
+ggplot(gas, aes(x = Price)) +
+  geom_histogram(binwidth = 0.05, fill = "green") +
+  facet_wrap(~ Highway, labeller = 
+               labeller(Highway = c("Y" = "Highway Access", "N" = "No Access"))) +
+  labs(title = "Gas Price Distribution: Near Highway or Not",
+       x = "Gas Price",
+       y = "Count") +
+  theme_bw()
+bootHighway <- do(10000) * mean(Price ~ Highway, data = resample(gas))
+print(confint(bootHighway, level=0.95))
+
+```
+
+The claim addressed by the graph above is that gas prices tend to be higher in areas that are in direct access to a highway. Simply looking at the graph, it is slightly difficult to tell due to the big difference in sample sizes of gas stations with highway access and without. However, looking at the bootstrapped data, we can say with a 95% confidence interval that the difference is roughly 3-6 cents difference, with highway access gas stations being the ones with a greater price. Looking at the average estimate, it is slightly less than a 5 cent difference. Therefore, while it isn't a drastic difference, it can be said that gas stations in direct access to highways are slightly more expensive per gallon.
+
+*E) Shell charges more than all other non-Shell brands.*
+```{r}
+ggplot(gas, aes(x = Brand, y = Price, fill = Brand)) +
+  geom_boxplot() +
+  labs(title = "Gas Prices by Brand",
+       x = "Brand",
+       y = "Gas Price") +
+  theme_bw()
+
+Shellgas <- gas |>
+  mutate(Shell_vs_Others = ifelse(Brand == "Shell", "Shell", "Other"))
+print(Shellpricediff)
+bootstrap_shell <- do(10000) * mean(Price ~ Shell_vs_Others, data = resample(Shellgas))
+print(confint(bootstrap_shell, level = 0.95))
+```
+The claim that we are trying to address is that Shell charges for per gallon of gas when compared to other brands that aren't Shell. Simply looking at the box plots above, it does appear that, generally, Shell is charging more per gallon of gas than other brands. Looking at the bootstrapped data, we can say on the 95% confidence interval that on the lower end, shell is charging one or two more cents and on the higher end is charging around 4 cents more than the competition, with the average being between 2 and 3 cents. Therefore, while it isn't a significant difference, on average Shell will charge more per gallon of gas.
+
+***Problem 2***
+
+*Part A*
+```{r}
+Sclass2011 <- cars |>
+  filter(year == 2011, trim == "63 AMG")
+bootstrap_s2021 <- do(10000) * mean(~ mileage, data = resample(Sclass2011))
+print(confint(bootstrap_s2021, level = 0.95))
+```
+Looking at the bootstrapped data below, it is safe to say with a 95% confidence interval that a 63 AMG listed on the used market in 2011 will fall between 26,252 and 31,782 miles on the odometer, witht he average being roughly 28,997.\
+
+*Part B*
+```{r}
+cars2014 <- cars |>
+  filter(year == 2014, trim == "550")
+
+cars2014B <- cars2011 %>%
+  mutate(isBlack = color == "Black")
+
+bootstrap_black <- do(10000) * mean(~ isBlack, data = resample(cars2014B))
+print(confint(bootstrap_black, level = 0.95))
+```
+The proportion of 2014 S-Class 550 cars that were painted black was estimated by the figure above to be between 41.5% and 45.5%, with 95% confidence based off of our bootstrapped estimates. 
+
+***Problem 3***
+
+*Part A*
+```{r}
+nbcEdEarl <- nbc |>
+  filter(Show %in% c("Living with Ed", "My Name is Earl"))
+
+meanEdEarl <- nbcEdEarl |>
+  group_by(Show) |>
+  summarize(meanEdEarl = mean(Q1_Happy))
+print(meanEdEarl)
+
+bootstrap_EdEarl <- do(10000) * diffmean(Q1_Happy ~ Show, data = resample(nbcEdEarl))
+print(confint(bootstrap_EdEarl, level = 0.95))
+```
+
+The question that we are trying to answer with the model above is if there is evidence that one show consistently produces
+a higher mean Q1_Happy response among viewers using their ratings as a benchmark. First, we filtered the data set to only include the shows Living with Ed and My Name is Earl. Then, using a bootstrapping sample with a 95% confidence interval, we calculated that the bounds of the rating differences are -0.399 and 0.105, with an average estimate being around -0.149. However, because of the fact that the confidence interval is around the value of 0, we are unable to say that one show makes people more significantly happier than the others.
+
+*Part B*
+```{r}
+nbcLosLos <- nbc |>
+  filter(Show %in% c("The Biggest Loser", "The Apprentice: Los Angeles"))
+
+meanLosLos <- nbcLosLos |>
+  group_by(Show) |>
+  summarize(meanLosLos = mean(Q1_Annoyed))
+print(meanLosLos)
+
+bootstrap_LosLos <- do(10000) * diffmean(Q1_Annoyed ~ Show, data = resample(nbcLosLos))
+print(confint(bootstrap_LosLos, level = 0.95))
+
+```
+The question that we are trying to answer with the model above is if there is a difference in the annoyance of the 2 shows: The Biggest Loser and The Apprentice: Los Angeles and if the difference is statistically significant. First, we filtered the data to only include the viewers that had viewed the 2 shows and calculated the means of their scores, which resulted in The Apprentice and The Biggest Loser getting scores of 2.31 and 2.04, respectively. Then using a bootstrapping method with a 95% confidence interval, we saw that the interval doesn't include 0, which suggests the fact that this difference in the means are statistically significant.
+
+
